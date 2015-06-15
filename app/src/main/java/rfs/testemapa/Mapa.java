@@ -3,8 +3,11 @@ package rfs.testemapa;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -60,6 +63,19 @@ public class Mapa extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(-22.00507971,-47.88904883)).title("Marker"));
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(-22.00507971,-47.88904883))      // Sets the center of the map to Mountain View
+                .zoom(17)                   // Sets the zoom
+                .bearing(0)                // Sets the orientation of the camera to east
+                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+//        CameraUpdate center=
+//                CameraUpdateFactory.newLatLng(new LatLng(-22.00507971,-47.88904883));
+//        CameraUpdate zoom=CameraUpdateFactory.zoomTo(20);
+//
+//        mMap.moveCamera(center);
+//        mMap.animateCamera(zoom);
     }
 }
