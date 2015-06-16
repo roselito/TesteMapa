@@ -1,6 +1,5 @@
 package rfs.testemapa;
 
-import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -15,12 +14,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import org.w3c.dom.Document;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -129,7 +124,9 @@ public class Mapa extends FragmentActivity implements LocationListener {
             }
             LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
             LatLng l2 = new LatLng(-22.00507971,-47.88904883);
-            mMap.addMarker(new MarkerOptions().position(l1).title("Marker"));
+            mMap.addMarker(new MarkerOptions().position(l1).title("Origem"));
+            mMap.addMarker(new MarkerOptions().position(l2).title("Destino"));
+            new RotaAsyncTask(this, mMap).execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(l1)      // Sets the center of the map to Mountain View
                     .zoom(17)                   // Sets the zoom
@@ -137,17 +134,6 @@ public class Mapa extends FragmentActivity implements LocationListener {
                     .tilt(30)                   // Sets the tilt of the camera to 30 degrees
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-            GMapV2Direction md = new GMapV2Direction();
-
-            Document doc = md.getDocument(l1, l2, GMapV2Direction.MODE_DRIVING);
-            ArrayList<LatLng> directionPoint = md.getDirection(doc);
-            PolylineOptions rectLine = new PolylineOptions().width(3).color(Color.RED);
-
-            for(int i = 0 ; i < directionPoint.size() ; i++) {
-                rectLine.add(directionPoint.get(i));
-            }
-
-            mMap.addPolyline(rectLine);
         }
 //        CameraUpdate center=
 //                CameraUpdateFactory.newLatLng(new LatLng(-22.00507971,-47.88904883));
