@@ -1,17 +1,37 @@
 package rfs.testemapa;
 
-import android.support.v4.app.FragmentActivity;
+import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
-public class Mapa extends FragmentActivity {
+import org.w3c.dom.Document;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public class Mapa extends FragmentActivity implements LocationListener {
+    // The minimum distance to change updates in metters
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 metters
+    // The minimum time beetwen updates in milliseconds
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
+    Location loc = null;
+    LocationManager locationManager = null;
+    String provider = "";
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -63,19 +83,89 @@ public class Mapa extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(-22.00507971,-47.88904883)).title("Marker"));
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(-22.00507971,-47.88904883))      // Sets the center of the map to Mountain View
-                .zoom(17)                   // Sets the zoom
-                .bearing(0)                // Sets the orientation of the camera to east
-                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
-                .build();                   // Creates a CameraPosition from the builder
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        Boolean gps = false, rede = false;
+        loc = null;
+        locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+        gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        rede = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        provider = "";
+        if (gps) {
+            provider = LocationManager.GPS_PROVIDER;
+        } else {
+            if (rede) {
+                provider = LocationManager.NETWORK_PROVIDER;
+            }
+        }
+        if (!provider.equals("")) {
+            locationManager.requestLocationUpdates(
+                    provider, MIN_TIME_BW_UPDATES,
+                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+        }
+        if (locationManager != null) {
+            if (!provider.equals("")) {
+                System.out.println("LocationManager:" + locationManager);
+                loc = locationManager
+                        .getLastKnownLocation(provider);
+            }
+        }
+        String mensagem = "Local:";
+        if (loc != null) {
+            mensagem += "\nloc: " + loc.getLatitude() + "," + loc.getLongitude();
+            Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+            List<Address> addresses;
+            try {
+                addresses = gcd.getFromLocation(loc.getLatitude(),
+                        loc.getLongitude(), 1);
+                if (addresses.size() > 0) {
+                    System.out.println("##################################");
+                    mensagem += "\nCidade:" + addresses.get(0).getLocality();
+                    mensagem += "\nEndereco:" + addresses.get(0).getThoroughfare() + ", " + addresses.get(0).getFeatureName();
+                    System.out.println(mensagem);
+                    System.out.println("##################################");
+                }
+            } catch (IOException e) {
+                System.out.println("erro!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                e.printStackTrace();
+            }
+            LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
+            LatLng l2 = new LatLng(-22.00507971,-47.88904883);
+            mMap.addMarker(new MarkerOptions().position(l1).title("Marker"));
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(l1)      // Sets the center of the map to Mountain View
+                    .zoom(17)                   // Sets the zoom
+                    .bearing(0)                // Sets the orientation of the camera to east
+                    .tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                    .build();                   // Creates a CameraPosition from the builder
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            GMapV2Direction md = new GMapV2Direction();
+
+            Document doc = md.getDocument(l1, l2, GMapV2Direction.MODE_DRIVING);
+            ArrayList<LatLng> directionPoint = md.getDirection(doc);
+            PolylineOptions rectLine = new PolylineOptions().width(3).color(Color.RED);
+
+            for(int i = 0 ; i < directionPoint.size() ; i++) {
+                rectLine.add(directionPoint.get(i));
+            }
+
+            mMap.addPolyline(rectLine);
+        }
 //        CameraUpdate center=
 //                CameraUpdateFactory.newLatLng(new LatLng(-22.00507971,-47.88904883));
 //        CameraUpdate zoom=CameraUpdateFactory.zoomTo(20);
 //
 //        mMap.moveCamera(center);
 //        mMap.animateCamera(zoom);
+    }
+
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
+
+    public void onProviderDisabled(String provider) {
+    }
+
+    public void onProviderEnabled(String provider) {
+    }
+
+    public void onLocationChanged(Location location) {
     }
 }
