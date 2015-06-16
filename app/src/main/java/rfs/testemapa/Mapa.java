@@ -123,6 +123,7 @@ public class Mapa extends FragmentActivity implements LocationListener {
                 e.printStackTrace();
             }
             LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
+            //LatLng l1 = new LatLng(-22.0124113,-47.8943344);
             LatLng l2 = new LatLng(-22.00507971,-47.88904883);
             mMap.addMarker(new MarkerOptions().position(l1).title("Origem"));
             mMap.addMarker(new MarkerOptions().position(l2).title("Destino"));
@@ -135,12 +136,6 @@ public class Mapa extends FragmentActivity implements LocationListener {
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
-//        CameraUpdate center=
-//                CameraUpdateFactory.newLatLng(new LatLng(-22.00507971,-47.88904883));
-//        CameraUpdate zoom=CameraUpdateFactory.zoomTo(20);
-//
-//        mMap.moveCamera(center);
-//        mMap.animateCamera(zoom);
     }
 
     public void onStatusChanged(String provider, int status, Bundle extras) {
