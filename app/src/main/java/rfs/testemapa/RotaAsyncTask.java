@@ -50,8 +50,9 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, List<LatLng>>{
         for (LatLng latlng : rota.getPoints()) {
             options.add(latlng);
         }
-
         mapView.addPolyline(options);
+        mapView.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        mapView.setMyLocationEnabled(true);
         dialog.dismiss();
     }
 

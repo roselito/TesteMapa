@@ -92,9 +92,11 @@ public class Mapa extends FragmentActivity implements LocationListener {
             }
         }
         if (!provider.equals("")) {
-            locationManager.requestLocationUpdates(
-                    provider, MIN_TIME_BW_UPDATES,
-                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+//            locationManager.requestLocationUpdates(
+//                    provider, MIN_TIME_BW_UPDATES,
+//                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+            locationManager.requestSingleUpdate(
+                    provider, this, null);
         }
         if (locationManager != null) {
             if (!provider.equals("")) {
@@ -106,13 +108,13 @@ public class Mapa extends FragmentActivity implements LocationListener {
         String mensagem = "Local:";
         if (loc != null) {
             mensagem += "\nloc: " + loc.getLatitude() + "," + loc.getLongitude();
-            Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+            Geocoder gco = new Geocoder(getBaseContext(), Locale.getDefault());
             List<Address> addresses;
             try {
-                addresses = gcd.getFromLocation(loc.getLatitude(),
+                addresses = gco.getFromLocation(loc.getLatitude(),
                         loc.getLongitude(), 1);
                 if (addresses.size() > 0) {
-                    System.out.println("##################################");
+                    System.out.println("##########ORIGEM########################");
                     mensagem += "\nCidade:" + addresses.get(0).getLocality();
                     mensagem += "\nEndereco:" + addresses.get(0).getThoroughfare() + ", " + addresses.get(0).getFeatureName();
                     System.out.println(mensagem);
@@ -122,16 +124,16 @@ public class Mapa extends FragmentActivity implements LocationListener {
                 System.out.println("erro!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 e.printStackTrace();
             }
+//            LatLng l1 = new LatLng(-22.0124113,-47.8943344);
             LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
-            //LatLng l1 = new LatLng(-22.0124113,-47.8943344);
-            LatLng l2 = new LatLng(-22.00507971,-47.88904883);
             mMap.addMarker(new MarkerOptions().position(l1).title("Origem"));
+            LatLng l2 = new LatLng(-22.00507971,-47.88904883);
             mMap.addMarker(new MarkerOptions().position(l2).title("Destino"));
             new RotaAsyncTask(this, mMap).execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
             CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(l1)      // Sets the center of the map to Mountain View
+                    .target(l1)      // Sets the center of the map to l1
                     .zoom(17)                   // Sets the zoom
-                    .bearing(0)                // Sets the orientation of the camera to east
+                    .bearing(0)                // Sets the orientation of the camera to north(0)
                     .tilt(30)                   // Sets the tilt of the camera to 30 degrees
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
