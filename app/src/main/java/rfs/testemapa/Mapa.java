@@ -78,6 +78,10 @@ public class Mapa extends FragmentActivity implements LocationListener {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
+        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setMapToolbarEnabled(true);
         Boolean gps = false, rede = false;
         loc = null;
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
