@@ -19,13 +19,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-public class Mapa extends FragmentActivity implements LocationListener,AsyncResponse {
+public class Mapa extends FragmentActivity implements LocationListener, AsyncResponse {
     // The minimum distance to change updates in metters
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 metters
     // The minimum time beetwen updates in milliseconds
     private static final long MIN_TIME_BW_UPDATES = 1000 * 20 * 1; // 1 minute
     Location loc = null;
+    Location locAnt = null;
     LocationManager locationManager = null;
+    CameraPosition cameraPosition;
     String provider = "";
     String distancia = "";
 
@@ -36,6 +38,13 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
         setUpMapIfNeeded();
+        cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(loc.getLatitude(), loc.getLongitude()))      // Sets the center of the map to l1
+                .zoom(17)                   // Sets the zoom
+                .bearing(0)                // Sets the orientation of the camera to north(0)
+                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
     @Override
@@ -65,6 +74,7 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
             // Try to obtain the map from the SupportMapFragment.
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
+
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 setUpMap();
@@ -80,7 +90,7 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
      */
     private void setUpMap() {
         //mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-        mMap.setMyLocationEnabled(true);
+        mMap.setMyLocationEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
         Boolean gps = false, rede = false;
@@ -98,16 +108,21 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
         }
         if (!provider.equals("")) {
             locationManager.requestLocationUpdates(
-                    provider, 0,
-                    50, this);
+                    provider, 20000,
+                    300, this);
 //            locationManager.requestSingleUpdate(
 //                    provider, this, null);
         }
         if (locationManager != null) {
             if (!provider.equals("")) {
-                System.out.println("LocationManager:" + locationManager);
-                loc = locationManager
+                //System.out.println("LocationManager:" + locationManager);
+                Location l = locationManager
                         .getLastKnownLocation(provider);
+                if (loc!=null) {
+                    locAnt.setLatitude(loc.getLatitude());
+                    locAnt.setLongitude(loc.getLongitude());
+                }
+                loc = l;
             }
         }
         String mensagem = "Local:";
@@ -119,11 +134,11 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
                 addresses = gco.getFromLocation(loc.getLatitude(),
                         loc.getLongitude(), 1);
                 if (addresses.size() > 0) {
-                    System.out.println("##########ORIGEM########################");
                     mensagem += "\nCidade:" + addresses.get(0).getLocality();
                     mensagem += "\nEndereco:" + addresses.get(0).getThoroughfare() + ", " + addresses.get(0).getFeatureName();
-                    System.out.println(mensagem);
-                    System.out.println("##################################");
+//                    System.out.println("##########ORIGEM########################");
+//                    System.out.println(mensagem);
+//                    System.out.println("##################################");
                 }
             } catch (IOException e) {
                 System.out.println("erro!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -131,19 +146,10 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
             }
 //            LatLng l1 = new LatLng(-22.0124113,-47.8943344);
             LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
-            mMap.addMarker(new MarkerOptions().position(l1).title("Origem"));
-            LatLng l2 = new LatLng(-22.00507971,-47.88904883);
-            mMap.addMarker(new MarkerOptions().position(l2).title("Destino "+distancia));
-            RotaAsyncTask rat = new RotaAsyncTask(this, mMap);
-            rat.delegate=this;
+            LatLng l2 = new LatLng(-22.00507971, -47.88904883);
+            RotaAsyncTask rat = new RotaAsyncTask(this, mMap, locAnt);
+            rat.delegate = this;
             rat.execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
-            CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(l1)      // Sets the center of the map to l1
-                    .zoom(17)                   // Sets the zoom
-                    .bearing(0)                // Sets the orientation of the camera to north(0)
-                    .tilt(30)                   // Sets the tilt of the camera to 30 degrees
-                    .build();                   // Creates a CameraPosition from the builder
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
     }
 
@@ -157,12 +163,12 @@ public class Mapa extends FragmentActivity implements LocationListener,AsyncResp
     }
 
     public void onLocationChanged(Location location) {
-        mMap.clear();
+        //mMap.clear();
         setUpMap();
     }
 
     @Override
     public void processFinish(String saida) {
-     distancia = saida;
+        distancia = saida;
     }
 }
