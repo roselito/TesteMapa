@@ -154,5 +154,6 @@ public class Mapa extends FragmentActivity implements LocationListener {
     }
 
     public void onLocationChanged(Location location) {
+        setUpMapIfNeeded();
     }
 }
