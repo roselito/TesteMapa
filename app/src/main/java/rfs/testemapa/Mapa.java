@@ -19,14 +19,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-public class Mapa extends FragmentActivity implements LocationListener {
+public class Mapa extends FragmentActivity implements LocationListener,AsyncResponse {
     // The minimum distance to change updates in metters
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 metters
     // The minimum time beetwen updates in milliseconds
-    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 20 * 1; // 1 minute
     Location loc = null;
     LocationManager locationManager = null;
     String provider = "";
+    String distancia = "";
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -78,7 +79,7 @@ public class Mapa extends FragmentActivity implements LocationListener {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        //mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
@@ -96,11 +97,11 @@ public class Mapa extends FragmentActivity implements LocationListener {
             }
         }
         if (!provider.equals("")) {
-//            locationManager.requestLocationUpdates(
-//                    provider, MIN_TIME_BW_UPDATES,
-//                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-            locationManager.requestSingleUpdate(
-                    provider, this, null);
+            locationManager.requestLocationUpdates(
+                    provider, 0,
+                    50, this);
+//            locationManager.requestSingleUpdate(
+//                    provider, this, null);
         }
         if (locationManager != null) {
             if (!provider.equals("")) {
@@ -132,8 +133,10 @@ public class Mapa extends FragmentActivity implements LocationListener {
             LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
             mMap.addMarker(new MarkerOptions().position(l1).title("Origem"));
             LatLng l2 = new LatLng(-22.00507971,-47.88904883);
-            mMap.addMarker(new MarkerOptions().position(l2).title("Destino"));
-            new RotaAsyncTask(this, mMap).execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
+            mMap.addMarker(new MarkerOptions().position(l2).title("Destino "+distancia));
+            RotaAsyncTask rat = new RotaAsyncTask(this, mMap);
+            rat.delegate=this;
+            rat.execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(l1)      // Sets the center of the map to l1
                     .zoom(17)                   // Sets the zoom
@@ -154,6 +157,12 @@ public class Mapa extends FragmentActivity implements LocationListener {
     }
 
     public void onLocationChanged(Location location) {
-        setUpMapIfNeeded();
+        mMap.clear();
+        setUpMap();
+    }
+
+    @Override
+    public void processFinish(String saida) {
+     distancia = saida;
     }
 }

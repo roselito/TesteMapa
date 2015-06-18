@@ -28,6 +28,26 @@ public class GoogleParser {
         }
     }
 
+    public String distancia() {
+        String retorno = "";
+        try {
+            final String result =
+                    convertStreamToString(
+                            feedUrl.openConnection()
+                                    .getInputStream());
+            JSONObject json = new JSONObject(result);
+            // Pega o resultado de rows
+            JSONObject jsonRows = json.getJSONArray("rows").getJSONObject(0);
+            JSONObject jsonElements = jsonRows.getJSONArray("elements").getJSONObject(0);
+            JSONObject jsonDistance = jsonElements.getJSONObject("distance");
+            Integer valor = (Integer)jsonDistance.get("value");
+            retorno = valor.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return retorno;
+    }
+
     public Route parse() {
         // Cria uma rota vazia
         final Route route = new Route();
@@ -132,8 +152,8 @@ public class GoogleParser {
 
             decoded.add(
                     new LatLng(
-                            (float)(lat / 1E5),
-                            (float)(lng / 1E5)));
+                            (float) (lat / 1E5),
+                            (float) (lng / 1E5)));
         }
         return decoded;
     }
