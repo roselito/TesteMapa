@@ -13,23 +13,20 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
 public class Mapa extends FragmentActivity implements LocationListener, AsyncResponse {
-    // The minimum distance to change updates in metters
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 metters
-    // The minimum time beetwen updates in milliseconds
     private static final long MIN_TIME_BW_UPDATES = 1000 * 20 * 1; // 1 minute
-    Location loc = null;
-    Location locAnt = null;
-    LocationManager locationManager = null;
-    CameraPosition cameraPosition;
-    String provider = "";
-    String distancia = "";
+    private Location loc = null;
+    private Location locAnt = null;
+    private LocationManager locationManager = null;
+    private CameraPosition cameraPosition;
+    private String provider = "";
+    private String distancia = "";
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -38,6 +35,11 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
         setUpMapIfNeeded();
+        if (loc==null) {
+            loc = new Location("Inicial");
+            loc.setLatitude(-22d);
+            loc.setLongitude(-47.89);
+        }
         cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(loc.getLatitude(), loc.getLongitude()))      // Sets the center of the map to l1
                 .zoom(17)                   // Sets the zoom
@@ -89,8 +91,8 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        //mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-        mMap.setMyLocationEnabled(false);
+        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
         Boolean gps = false, rede = false;
