@@ -6,8 +6,12 @@ import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -42,10 +46,6 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
 
     @Override
     protected String doInBackground(Double... params) {
-        if (((Mapa) context).locAnt != null) {
-            System.out.println("================");
-            System.out.println(((Mapa) context).locAnt.getLatitude() + ":" + ((Mapa) context).locAnt.getLongitude());
-        }
         l1 = new LatLng(params[0], params[1]);
         l2 = new LatLng(params[2], params[3]);
         rota = directions(
@@ -65,9 +65,20 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
                 .width(5)
                 .color(Color.RED)
                 .visible(true);
-
+        Double lat1=null;
+        Double lat2=null;
+        Double lng1=null;
+        Double lng2=null;
         for (LatLng latlng : rota.getPoints()) {
             options.add(latlng);
+            if (lat1==null) { lat1 = latlng.latitude; }
+            if (lat2==null) { lat2 = latlng.latitude; }
+            if (lng1==null) { lng1 = latlng.longitude; }
+            if (lng2==null) { lng2 = latlng.longitude; }
+            lat1 = Math.min(lat1,latlng.latitude);
+            lng1 = Math.min(lng1,latlng.longitude);
+            lat2 = Math.max(lat2, latlng.latitude);
+            lng2 = Math.max(lng2, latlng.longitude);
         }
         delegate.processFinish(result);
         Boolean continuar = false;
@@ -78,8 +89,24 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
             mapView.addPolyline(options);
             mapView.addMarker(new MarkerOptions().position(l1).title("Origem"));
             mapView.addMarker(new MarkerOptions().position(l2).title("Destino " + distancia));
+            LatLngBounds lb = new LatLngBounds(
+                    new LatLng(lat1,lng1),
+                    new LatLng(lat2,lng2)
+            );
+            CameraUpdate c = CameraUpdateFactory.newLatLngBounds(lb, 100);
+            try {
+                CameraPosition cpl = mapView.getCameraPosition();
+                CameraPosition cp = new CameraPosition.Builder()
+                        .target(cpl.target)
+                        .tilt(30)
+                        .build();
+                mapView.animateCamera(CameraUpdateFactory.newCameraPosition(cp));
+                mapView.moveCamera(CameraUpdateFactory.newLatLngBounds(lb, 100));
+                } catch (Exception e) {
+            }
+
         }
-        //dialog.dismiss();
+
     }
 
     private Route directions(

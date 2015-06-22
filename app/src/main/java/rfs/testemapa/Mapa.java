@@ -7,12 +7,15 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,9 +26,8 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
     private static final long MIN_TIME_BW_UPDATES = 1000 * 20 * 1; // 1 minute
     private Location loc = null;
     private Location locAnt = null;
+    private LatLng l1, l2;
     private LocationManager locationManager = null;
-    private CameraPosition cameraPosition;
-    private String provider = "";
     private String distancia = "";
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
@@ -34,19 +36,12 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
-        setUpMapIfNeeded();
-        if (loc==null) {
+        if (loc == null) {
             loc = new Location("Inicial");
             loc.setLatitude(-22d);
             loc.setLongitude(-47.89);
         }
-        cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(loc.getLatitude(), loc.getLongitude()))      // Sets the center of the map to l1
-                .zoom(17)                   // Sets the zoom
-                .bearing(0)                // Sets the orientation of the camera to north(0)
-                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
-                .build();                   // Creates a CameraPosition from the builder
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        setUpMapIfNeeded();
     }
 
     @Override
@@ -76,12 +71,8 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
             // Try to obtain the map from the SupportMapFragment.
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
-
-            // Check if we were successful in obtaining the map.
-            if (mMap != null) {
-                setUpMap();
-            }
         }
+        setUpMap();
     }
 
     /**
@@ -93,65 +84,73 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
     private void setUpMap() {
         mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
         Boolean gps = false, rede = false;
         loc = null;
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
-        gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        rede = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        provider = "";
-        if (gps) {
-            provider = LocationManager.GPS_PROVIDER;
-        } else {
-            if (rede) {
-                provider = LocationManager.NETWORK_PROVIDER;
+        if (locationManager != null) {
+            if (!obterLocalizacao(LocationManager.NETWORK_PROVIDER)) {
+                if (!obterLocalizacao(LocationManager.GPS_PROVIDER)) {
+                    Toast.makeText(getApplicationContext(), "Não foi possível determinar sua localização atual. Verifique sua rede de dados ou a conexão com o sistema de GPS.", Toast.LENGTH_LONG).show();
+                }
             }
         }
-        if (!provider.equals("")) {
-            locationManager.requestLocationUpdates(
-                    provider, 20000,
-                    300, this);
-//            locationManager.requestSingleUpdate(
-//                    provider, this, null);
+        String mensagem = "Local:";
+        if (loc == null) {
+            loc = new Location("Teste");
+            loc.setLatitude(-22.0124113);
+            loc.setLongitude(-47.8943344);
         }
-        if (locationManager != null) {
-            if (!provider.equals("")) {
-                //System.out.println("LocationManager:" + locationManager);
-                Location l = locationManager
-                        .getLastKnownLocation(provider);
-                if (loc!=null) {
+        mensagem += "\nloc: " + loc.getLatitude() + "," + loc.getLongitude();
+        Geocoder gco = new Geocoder(getBaseContext(), Locale.getDefault());
+        List<Address> addresses;
+        try {
+            addresses = gco.getFromLocation(loc.getLatitude(),
+                    loc.getLongitude(), 1);
+            if (addresses.size() > 0) {
+                mensagem += "\nCidade:" + addresses.get(0).getLocality();
+                mensagem += "\nEndereco:" + addresses.get(0).getThoroughfare() + ", " + addresses.get(0).getFeatureName();
+            }
+        } catch (IOException e) {
+            System.out.println("erro!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            e.printStackTrace();
+        }
+        l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
+        l2 = new LatLng(-22.0971, -47.889);
+        RotaAsyncTask rat = new RotaAsyncTask(this, mMap, locAnt);
+        rat.delegate = this;
+        rat.execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
+    }
+
+    private boolean obterLocalizacao(String tipoAcesso) {
+        locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+        Boolean acesso = locationManager.isProviderEnabled(tipoAcesso);
+        if (!acesso) {
+            if (tipoAcesso.equals(LocationManager.NETWORK_PROVIDER)) {
+                Toast.makeText(getApplicationContext(), "Sem acesso à rede de dados ou wi-fi", Toast.LENGTH_LONG).show();
+            }
+            if (tipoAcesso.equals(LocationManager.GPS_PROVIDER)) {
+                Toast.makeText(getApplicationContext(), "Sem acesso à rede GPS", Toast.LENGTH_LONG).show();
+            }
+            return false;
+        } else {
+            locationManager.requestLocationUpdates(
+                    tipoAcesso, 20000, 300, this);
+            Location l = locationManager
+                    .getLastKnownLocation(tipoAcesso);
+            if (l != null) {
+                if (loc != null) {
+                    Toast.makeText(getApplicationContext(), "loc", Toast.LENGTH_LONG).show();
                     locAnt.setLatitude(loc.getLatitude());
                     locAnt.setLongitude(loc.getLongitude());
                 }
                 loc = l;
+                return true;
+            } else {
+                return false;
             }
-        }
-        String mensagem = "Local:";
-        if (loc != null) {
-            mensagem += "\nloc: " + loc.getLatitude() + "," + loc.getLongitude();
-            Geocoder gco = new Geocoder(getBaseContext(), Locale.getDefault());
-            List<Address> addresses;
-            try {
-                addresses = gco.getFromLocation(loc.getLatitude(),
-                        loc.getLongitude(), 1);
-                if (addresses.size() > 0) {
-                    mensagem += "\nCidade:" + addresses.get(0).getLocality();
-                    mensagem += "\nEndereco:" + addresses.get(0).getThoroughfare() + ", " + addresses.get(0).getFeatureName();
-//                    System.out.println("##########ORIGEM########################");
-//                    System.out.println(mensagem);
-//                    System.out.println("##################################");
-                }
-            } catch (IOException e) {
-                System.out.println("erro!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                e.printStackTrace();
-            }
-//            LatLng l1 = new LatLng(-22.0124113,-47.8943344);
-            LatLng l1 = new LatLng(loc.getLatitude(), loc.getLongitude());
-            LatLng l2 = new LatLng(-22.00507971, -47.88904883);
-            RotaAsyncTask rat = new RotaAsyncTask(this, mMap, locAnt);
-            rat.delegate = this;
-            rat.execute(l1.latitude, l1.longitude, l2.latitude, l2.longitude);
         }
     }
 
@@ -162,6 +161,7 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
     }
 
     public void onProviderEnabled(String provider) {
+        setUpMap();
     }
 
     public void onLocationChanged(Location location) {
