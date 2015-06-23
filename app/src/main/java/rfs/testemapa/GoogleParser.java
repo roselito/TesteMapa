@@ -1,5 +1,7 @@
 package rfs.testemapa;
 
+import android.widget.Toast;
+
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -65,18 +66,26 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
                 .width(5)
                 .color(Color.RED)
                 .visible(true);
-        Double lat1=null;
-        Double lat2=null;
-        Double lng1=null;
-        Double lng2=null;
+        Double lat1 = null;
+        Double lat2 = null;
+        Double lng1 = null;
+        Double lng2 = null;
         for (LatLng latlng : rota.getPoints()) {
             options.add(latlng);
-            if (lat1==null) { lat1 = latlng.latitude; }
-            if (lat2==null) { lat2 = latlng.latitude; }
-            if (lng1==null) { lng1 = latlng.longitude; }
-            if (lng2==null) { lng2 = latlng.longitude; }
-            lat1 = Math.min(lat1,latlng.latitude);
-            lng1 = Math.min(lng1,latlng.longitude);
+            if (lat1 == null) {
+                lat1 = latlng.latitude;
+            }
+            if (lat2 == null) {
+                lat2 = latlng.latitude;
+            }
+            if (lng1 == null) {
+                lng1 = latlng.longitude;
+            }
+            if (lng2 == null) {
+                lng2 = latlng.longitude;
+            }
+            lat1 = Math.min(lat1, latlng.latitude);
+            lng1 = Math.min(lng1, latlng.longitude);
             lat2 = Math.max(lat2, latlng.latitude);
             lng2 = Math.max(lng2, latlng.longitude);
         }
@@ -89,12 +98,12 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
             mapView.addPolyline(options);
             mapView.addMarker(new MarkerOptions().position(l1).title("Origem"));
             mapView.addMarker(new MarkerOptions().position(l2).title("Destino " + distancia));
-            LatLngBounds lb = new LatLngBounds(
-                    new LatLng(lat1,lng1),
-                    new LatLng(lat2,lng2)
-            );
-            CameraUpdate c = CameraUpdateFactory.newLatLngBounds(lb, 100);
             try {
+                LatLngBounds lb = new LatLngBounds(
+                        new LatLng(lat1, lng1),
+                        new LatLng(lat2, lng2)
+                );
+                CameraUpdate c = CameraUpdateFactory.newLatLngBounds(lb, 100);
                 CameraPosition cpl = mapView.getCameraPosition();
                 CameraPosition cp = new CameraPosition.Builder()
                         .target(cpl.target)
@@ -102,7 +111,7 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
                         .build();
                 mapView.animateCamera(CameraUpdateFactory.newCameraPosition(cp));
                 mapView.moveCamera(CameraUpdateFactory.newLatLngBounds(lb, 100));
-                } catch (Exception e) {
+            } catch (Exception e) {
             }
 
         }
@@ -111,7 +120,7 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
 
     private Route directions(
             final LatLng start, final LatLng dest) {
-        GoogleParser parser;
+        GoogleParser parser = null;
         if (locAnt != null) {
             String urlRotav = String.format(Locale.US,
                     "http://maps.googleapis.com/maps/api/" +
@@ -125,30 +134,39 @@ public class RotaAsyncTask extends AsyncTask<Double, Void, String> {
             parser = new GoogleParser(urlRotav);
             distanciav = parser.distancia();
         }
-        String urlRotad = String.format(Locale.US,
-                "http://maps.googleapis.com/maps/api/" +
-                        "distancematrix/json?origins=%f,%f&" +
-                        "destinations=%f,%f&" +
-                        "sensor=true&mode=walking",
-                start.latitude,
-                start.longitude,
-                dest.latitude,
-                dest.longitude);
-        parser = new GoogleParser(urlRotad);
-        distancia = parser.distancia();
-        // Formatando a URL com a latitude e longitude
-        // de origem e destino.
-        String urlRota = String.format(Locale.US,
-                "http://maps.googleapis.com/maps/api/" +
-                        "directions/json?origin=%f,%f&" +
-                        "destination=%f,%f&" +
-                        "sensor=true&mode=walking",
-                start.latitude,
-                start.longitude,
-                dest.latitude,
-                dest.longitude);
+        try {
+            String urlRotad = String.format(Locale.US,
+                    "http://maps.googleapis.com/maps/api/" +
+                            "distancematrix/json?origins=%f,%f&" +
+                            "destinations=%f,%f&" +
+                            "sensor=true&mode=walking",
+                    start.latitude,
+                    start.longitude,
+                    dest.latitude,
+                    dest.longitude);
+            parser = new GoogleParser(urlRotad);
+            distancia = parser.distancia();
+            // Formatando a URL com a latitude e longitude
+            // de origem e destino.
+            String urlRota = String.format(Locale.US,
+                    "http://maps.googleapis.com/maps/api/" +
+                            "directions/json?origin=%f,%f&" +
+                            "destination=%f,%f&" +
+                            "sensor=true&mode=walking",
+                    start.latitude,
+                    start.longitude,
+                    dest.latitude,
+                    dest.longitude);
 
-        parser = new GoogleParser(urlRota);
-        return parser.parse();
+            parser = new GoogleParser(urlRota);
+        } catch (Exception e) {
+            Toast.makeText(context, "Rede de dados não está disponível.", Toast.LENGTH_LONG);
+        }
+        if (parser != null) {
+            return parser.parse();
+        } else {
+            Toast.makeText(context, "Rede de dados não está disponível.", Toast.LENGTH_LONG);
+            return null;
+        }
     }
 }

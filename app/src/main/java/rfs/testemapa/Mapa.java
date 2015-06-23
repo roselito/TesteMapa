@@ -92,6 +92,7 @@ public class Mapa extends FragmentActivity implements LocationListener, AsyncRes
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
         if (locationManager != null) {
             if (!obterLocalizacao(LocationManager.NETWORK_PROVIDER)) {
+                Toast.makeText(getApplicationContext(), "Não foi possível obter acesso à rede de dados.", Toast.LENGTH_LONG).show();
                 if (!obterLocalizacao(LocationManager.GPS_PROVIDER)) {
                     Toast.makeText(getApplicationContext(), "Não foi possível determinar sua localização atual. Verifique sua rede de dados ou a conexão com o sistema de GPS.", Toast.LENGTH_LONG).show();
                 }
